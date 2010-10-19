@@ -25,7 +25,7 @@ if (version_compare(PHP_VERSION, '5.0.0', '<')) {
   exit;
 }
 
-$missing = array_diff(array('pcntl','pcre','posix','tokenizer'),
+$missing = array_diff(array('pcre','posix','tokenizer'),
                       get_loaded_extensions());
 if ($missing) {
   fwrite(STDERR, 'Fatal error: phpsh requires the following extensions: '.
@@ -518,9 +518,11 @@ class ___Phpsh___ {
   function interactive_loop() {
     extract($GLOBALS);
 
-    // python spawned-processes ignore SIGPIPE by default, this makes sure
-    //  the php process exits when the terminal is closed
-    pcntl_signal(SIGPIPE,SIG_DFL);
+    if(in_array('pcntl', get_loaded_extensions())) {
+        // python spawned-processes ignore SIGPIPE by default, this makes sure
+        //  the php process exits when the terminal is closed
+        pcntl_signal(SIGPIPE,SIG_DFL);
+    }
 
     while (!feof($this->_handle)) {
       // indicate to phpsh (parent process) that we are ready for more input
@@ -557,7 +559,7 @@ class ___Phpsh___ {
         echo "\033[33m"; // yellow
       }
 
-      if ($this->fork_every_command) {
+      if (in_array('pcntl', get_loaded_extensions()) and $this->fork_every_command) {
         $parent_pid = posix_getpid();
         $pid = pcntl_fork();
         $evalue = null;
